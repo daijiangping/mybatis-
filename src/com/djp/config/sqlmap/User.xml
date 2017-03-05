@@ -3,9 +3,76 @@
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="test">
-	
+	<!-- 在映射文件中配置很多sql语句 -->
+	<!-- id:标识映射文件的sql
+		将sql语句封装到mappedStatement对象中，所以ID称为statement的ID
+		parameterType:指定输入参数的类型 
+		#{}表示一个占位符
+		#{id} 其中的ID表示接收输入的参数，参数名称就是id 如果输入的参数是简单类型 #{} 的参数可以是任意 可以是value或其他名称
+		resultType:指定sql输出结果所映射的java对象类型   
+	 -->
+	 <!-- 根据ID查找单个用户信息 -->
 	<select id="findById" parameterType="int" resultType="com.djp.pojo.User">
 		select * from t_user where id=#{id}
 	</select>
-	
+	<!-- 
+		根据用户名模糊查询用户信息，结果可能返回多条
+		resultType：指定的就是单条记录所隐射的java对象类型
+		${}表示拼接sql 将接收的内容不加任何修饰拼接到sql语句中
+		问题：使用${}拼接sql 容易引起sql注入
+		${value} :接收输入参数的内容 ，如果传入的类型是简单类型 ${}中只能使用value
+	 -->
+	 <!-- 根据用户名模糊查询用户信息 -->
+	<select id="findByName" parameterType="java.lang.String" resultType="com.djp.pojo.User">
+		select * from t_user where name like "%${value}%"
+	</select>
+	<!-- 
+	parameterType:指定输入的参数类型是pojo (包括用户信息)
+	#{}中指定pojo的属性名 能接收到pojo的属性值  mybatis中通过OGNL获取对象的属性值
+	 -->
+	<!-- 插入用户 -->
+	<insert id="insertUser" parameterType="com.djp.pojo.User">
+		insert into t_user(name,pwd,address,brithday) values(#{name},#{pwd},#{address},#{brithday})
+	</insert>
+	<!-- 将插入数据的主键返回 ，返回到user对象中-->
+	<insert id="inserReturnId">
+		<!-- 
+			使用mysql的LAST_INSERT_ID()函数，得到刚insert进去的主键值，只适用于自增主键
+			keyProperty:将查询到的主键值设置到parameterType指定的对象的哪个属性
+			order:SELECT LAST_INSERT_ID()的执行顺序,相对于insert语句的执行顺序
+			resultType:指定SELECT LAST_INSERT_ID()的结果类型
+		 -->
+		 <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+				SELECT LAST_INSERT_ID()	 	
+		 </selectKey>
+		 insert into t_user(id,name,pwd,address,brithday) values(#{id},#{name},#{pwd},#{address},#{brithday})
+		<!-- 使用mysq的UUID()生成主键
+		执行过程:
+		首先通过UUID得到主键,将主键设置到user对象的ID中
+		在insert执行时候从user对象中取出ID属性值
+		 --> 
+		<!--  <selectKey keyProperty="id" order="BEFORE" resultType="java.lang.String">
+				SELECT UUID()	 	
+		 </selectKey>
+		 insert into t_user(id,name,pwd,address,brithday) values(#{id},#{name},#{pwd},#{address},#{brithday}) --> -->
+		 <!-- 
+		 	通过oracle的序列生成主键
+		 	<selectKey keyProperty="id" order="BEFORE" resultType="java.lang.String">
+				SELECT 序列 名.nextval()	 	
+		 	</selectKey>
+		  -->
+	</insert>
+	<!-- 删除用户 -->
+	<delete id="deleteUser" parameterType="java.lang.Integer">
+		delete from t_user where id=#{id}
+	</delete>
+	<!-- 
+	根据ID更新用户
+	分析:需要传入的ID,需要传入的更新信息
+	parameterType:指定user对象 包括ID和更新信息 注意:ID必须存在
+	#{id}:从user对象中获取ID属性值
+	 -->
+	<update id="updateUser" parameterType="com.djp.pojo.User">
+		update t_user set name=#{name} where id=#{id}
+	</update>
 </mapper>

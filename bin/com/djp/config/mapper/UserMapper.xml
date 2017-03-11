@@ -2,7 +2,39 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="test">
+<mapper namespace="com.djp.config.mapper.UserMapper">
+	<!-- sql片段:
+			id:sql片段的唯一标识
+	 -->
+	<sql id="query_user_where">
+		<if test="userCustom!=null">
+				<if test="userCustom.address!=null and userCustom.address!=''">
+				and	u.address=#{userCustom.address}
+				</if>
+				<if test="userCustom.name!=null and userCustom.name!=''">
+					and u.name like "%${userCustom.name}%"
+				</if>
+		</if>
+	</sql>
+	
+	<!-- 用户信息综合查询 动态sql -->
+	<select id="findUserList" parameterType="userQueryVo" resultType="userCustom">
+		select * from t_user u 
+		<where><!-- where能自动去掉筛选条件中的第一个 and -->
+		<!-- 引用sql片段,如果片段不在本文件中,需要在前面加上namespace -->
+			<include refid="query_user_where"></include>
+		</where>
+	</select>
+	
+	<!-- 动态查询统计 -->
+	<select id="findUserCount" parameterType="userQueryVo" resultType="int">
+		select count(*) from t_user u 
+		<where><!-- where能自动去掉筛选条件中的第一个 and -->
+			<!-- 引用sql片段,如果片段不在本文件中,需要在前面加上namespace -->
+			<include refid="query_user_where"></include>
+		</where>
+	</select>
+	
 	<!-- 在映射文件中配置很多sql语句 -->
 	<!-- id:标识映射文件的sql
 		将sql语句封装到mappedStatement对象中，所以ID称为statement的ID
@@ -12,7 +44,7 @@
 		resultType:指定sql输出结果所映射的java对象类型   
 	 -->
 	 <!-- 根据ID查找单个用户信息 -->
-	<select id="findById" parameterType="int" resultType="com.djp.pojo.User">
+	<select id="findById" parameterType="int" resultType="user">
 		select * from t_user where id=#{id}
 	</select>
 	<!-- 
